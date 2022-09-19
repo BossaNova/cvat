@@ -63,3 +63,4 @@ cvat-core/reports
 # produced by prepare in the root package.json script
 .husky
 
+/terraform/.terraform/

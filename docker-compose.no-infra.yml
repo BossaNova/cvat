@@ -16,8 +16,10 @@ services:
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
-      CVAT_REDIS_HOST: 'cvat_redis'
-      CVAT_POSTGRES_HOST: 'cvat_db'
+      CVAT_REDIS_HOST: '${CVAT_REDIS_HOST:-cvat_redis}'
+      CVAT_POSTGRES_HOST: '${CVAT_POSTGRES_HOST:-cvat_db}'
+      CVAT_POSTGRES_PASSWORD: '${CVAT_POSTGRES_PASSWORD:-default}'
+      CVAT_POSTGRES_USER: '${CVAT_POSTGRES_USER:-root}'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 1
@@ -44,8 +46,10 @@ services:
     depends_on:
       - cvat_opa
     environment:
-      CVAT_REDIS_HOST: 'cvat_redis'
-      CVAT_POSTGRES_HOST: 'cvat_db'
+      CVAT_REDIS_HOST: '${CVAT_REDIS_HOST:-cvat_redis}'
+      CVAT_POSTGRES_HOST: '${CVAT_POSTGRES_HOST:-cvat_db}'
+      CVAT_POSTGRES_PASSWORD: '${CVAT_POSTGRES_PASSWORD:-default}'
+      CVAT_POSTGRES_USER: '${CVAT_POSTGRES_USER:-root}'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
     command: -c supervisord/utils.conf
     volumes:
@@ -62,8 +66,10 @@ services:
     depends_on:
       - cvat_opa
     environment:
-      CVAT_REDIS_HOST: 'cvat_redis'
-      CVAT_POSTGRES_HOST: 'cvat_db'
+      CVAT_REDIS_HOST: '${CVAT_REDIS_HOST:-cvat_redis}'
+      CVAT_POSTGRES_HOST: '${CVAT_POSTGRES_HOST:-cvat_db}'
+      CVAT_POSTGRES_PASSWORD: '${CVAT_POSTGRES_PASSWORD:-default}'
+      CVAT_POSTGRES_USER: '${CVAT_POSTGRES_USER:-root}'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 2
     command: -c supervisord/worker.default.conf
@@ -81,8 +87,10 @@ services:
     depends_on:
       - cvat_opa
     environment:
-      CVAT_REDIS_HOST: 'cvat_redis'
-      CVAT_POSTGRES_HOST: 'cvat_db'
+      CVAT_REDIS_HOST: '${CVAT_REDIS_HOST:-cvat_redis}'
+      CVAT_POSTGRES_HOST: '${CVAT_POSTGRES_HOST:-cvat_db}'
+      CVAT_POSTGRES_PASSWORD: '${CVAT_POSTGRES_PASSWORD:-default}'
+      CVAT_POSTGRES_USER: '${CVAT_POSTGRES_USER:-root}'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 1
     command: -c supervisord/worker.low.conf
@@ -117,13 +125,13 @@ services:
       - '--entryPoints.web.address=:8080'
       - '--providers.file.directory=/etc/traefik/rules'
     # Uncomment to get Traefik dashboard
-    #   - "--entryPoints.dashboard.address=:8090"
-    #   - "--api.dashboard=true"
-    # labels:
-    #   - traefik.enable=true
-    #   - traefik.http.routers.dashboard.entrypoints=dashboard
-    #   - traefik.http.routers.dashboard.service=api@internal
-    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
+      - "--entryPoints.dashboard.address=:8090"
+      - "--api.dashboard=true"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.entrypoints=dashboard
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
     ports:
       - 8080:8080
       - 8090:8090

@@ -5,7 +5,7 @@
 version: '3.3'
 
 services:
-  cvat:
+  cvat_server:
     labels:
       - traefik.http.routers.cvat.entrypoints=websecure
       - traefik.http.routers.cvat.tls.certresolver=lets-encrypt
@@ -19,9 +19,15 @@ services:
     image: traefik:v2.4
     container_name: traefik
     command:
+      - '--log=true'
+      # - '--log.filepath=/var/log/traefik/error.log'
+      - "--log.level=debug"
+      - "--log.format=json"
+      - "--accesslog=false"
+      # - '--accesslog.filepath=/var/log/traefik/access.log'
       - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.network=cvat"
-      - '--providers.file.directory=/etc/traefik/rules'
+      - "--providers.docker.network=cvat_cvat"
+      # - '--providers.file.directory=/etc/traefik/rules'
       - "--entryPoints.web.address=:80"
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
       - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
@@ -30,8 +36,8 @@ services:
       - "--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true"
       - "--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json"
       # Uncomment to get Traefik dashboard
-      # - "--entryPoints.dashboard.address=:8090"
-      # - "--api.dashboard=true"
+      - "--entryPoints.dashboard.address=:8090"
+      - "--api.dashboard=true"
     ports:
       - 80:80
       - 443:443

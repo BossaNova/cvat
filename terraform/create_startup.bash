@@ -83,6 +83,8 @@ compute_project=$(echo "${terraform_outputs}" | jq -r 'keys[] as $k | "\($k), \(
 project_id=$(echo "${terraform_outputs}" | jq -r 'keys[] as $k | "\($k), \(.[$k] | .value)"' | grep project_id | cut -d "," -f 2 | xargs)
 echo "To connect to the host execute:"
 echo "gcloud compute ssh \"${compute_host}\" --zone \"$compute_project\" --project \"${project_id}\""
+echo "Service account for the VM is:"
+echo "${terraform_outputs}" | jq -r 'keys[] as $k | "\($k), \(.[$k] | .value)"' | grep compute_sa | cut -d "," -f 2 | xargs
 for value in "${commands[@]}"
 do
      echo $value

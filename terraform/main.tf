@@ -92,6 +92,18 @@ resource "google_project_iam_member" "cvat_project_memcache_binding" {
   member  = module.cvat_service_accounts.iam_email
 }
 
+resource "google_project_iam_member" "cvat_project_logging_writer" {
+  project = module.cvat_project.project_id
+  role    = "roles/logging.logWriter"
+  member  = module.cvat_service_accounts.iam_email
+}
+
+resource "google_project_iam_member" "cvat_project_monitoring_writer" {
+  project = module.cvat_project.project_id
+  role    = "roles/monitoring.metricWriter"
+  member  = module.cvat_service_accounts.iam_email
+}
+
 module "cvat_vpc" {
   source  = "terraform-google-modules/network/google"
   version = "~> 5.2"
@@ -316,7 +328,7 @@ module "cvat_instance_template" {
   source_image_family  = "ubuntu-pro-fips-2004-lts"
   source_image_project = "ubuntu-os-pro-cloud"
   name_prefix          = "cvat-server"
-  machine_type         = "e2-medium"
+  machine_type         = var.machine_type
   tags                 = ["frontend"]
 
   service_account = {
@@ -335,7 +347,6 @@ module "cvat_compute_instance" {
   hostname            = local.host_name
   instance_template   = module.cvat_instance_template.self_link
   deletion_protection = false
-  #static_ips          = [module.cvat_static_address.addresses[0]]
   access_config = [
     {
       nat_ip       = module.cvat_static_address.addresses[0]

@@ -69,6 +69,10 @@ output "compute_external_ip" {
   value       = module.cvat_compute_instance.instances_details[0].network_interface[0].access_config[0].nat_ip
 }
 
+output "compute_sa" {
+  description = "Service account for the compute machine"
+  value       = module.cvat_service_accounts.email
+}
 output "redis_instance_id" {
   description = "Instance for redis"
   value       = module.cvat_memorystore.id

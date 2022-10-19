@@ -41,3 +41,9 @@ variable "editors" {
   type        = map(string)
   default     = null
 }
+
+variable "machine_type" {
+  description = "Machine type to use for the CVAT server see https://cloud.google.com/compute/docs/machine-types for machine types"
+  default     = "e2-medium"
+  type        = string
+}

@@ -15,7 +15,7 @@ import {
     changeGroupColorAsync,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
-    removeObject as removeObjectAction,
+    removeObjects as removeObjectsAction,
     collapseAll,
     collapseLabelGroups,
 } from 'actions/annotation-actions';
@@ -23,8 +23,8 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy,
 } from 'reducers';
-import { ObjectState, ShapeType } from 'cvat-core-wrapper';
-import { groupAndSort, SortedLabelGroup } from './object-list-sorter';
+import { Label, ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { groupAndSort } from './object-list-sorter';
 
 interface OwnProps {
     readonly: boolean;
@@ -54,7 +54,7 @@ interface DispatchToProps {
     updateAnnotations(states: any[]): void;
     collapseAll(value: boolean): void;
     collapseLabelGroups(labelIDs: number[], value: boolean): void;
-    removeObject: (objectState: any, force: boolean) => void;
+    removeObjects: (objectStates: ObjectState[], force: boolean) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeFrame(frame: number): void;
@@ -137,8 +137,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         collapseLabelGroups(labelIDs: number[], value: boolean): void {
             dispatch(collapseLabelGroups(labelIDs, value));
         },
-        removeObject(objectState: ObjectState, force: boolean): void {
-            dispatch(removeObjectAction(objectState, force));
+        removeObjects(objectStates: ObjectState[], force: boolean): void {
+            dispatch(removeObjectsAction(objectStates, force));
         },
         copyShape(objectState: ObjectState): void {
             dispatch(copyShapeAction(objectState));
@@ -160,7 +160,9 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     statesOrdering: StatesOrdering;
     objectStates: ObjectState[];
-    groupedObjects: SortedLabelGroup[];
+    groupedObjects: (Label | ObjectState)[];
+    collapsedStates: Record<number, boolean>;
+    collapsedLabelStates: Record<number, boolean>;
 }
 
 class ObjectsListContainer extends React.PureComponent<Props, State> {
@@ -178,18 +180,22 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             statesOrdering: StatesOrdering.ID_ASCENT,
             objectStates: [],
             groupedObjects: [],
+            collapsedStates: [],
+            collapsedLabelStates: [],
         };
     }
 
     static getDerivedStateFromProps(props: Props, state: State): State | null {
-        if (props.objectStates === state.objectStates) {
+        // Only re-render if objectStates or label collapsed-ness has changed
+        if (props.objectStates === state.objectStates && props.collapsedLabelStates === state.collapsedLabelStates && props.collapsedStates === state.collapsedStates) {
             return null;
         }
-
         return {
             ...state,
             objectStates: props.objectStates,
-            groupedObjects: groupAndSort(props.objectStates, state.statesOrdering),
+            groupedObjects: groupAndSort(props.objectStates, state.statesOrdering, props.collapsedLabelStates),
+            collapsedStates: props.collapsedStates,
+            collapsedLabelStates: props.collapsedLabelStates,
         };
     }
 
@@ -197,7 +203,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const { objectStates } = this.props;
         this.setState({
             statesOrdering,
-            groupedObjects: groupAndSort(objectStates, statesOrdering),
+            groupedObjects: groupAndSort(objectStates, statesOrdering, this.props.collapsedLabelStates),
         });
     };
 
@@ -267,10 +273,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             colorBy,
             readonly,
             statesCollapsedAll,
+            collapsedStates,
             collapsedLabelStates,
             updateAnnotations,
             changeGroupColor,
-            removeObject,
+            removeObjects,
             copyShape,
             propagateObject,
             changeFrame,
@@ -399,10 +406,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const states = getActivatedStates();
                 if (!readonly && states.length) {
-                    // ROBTODO: look into doing as single atomic change
-                    for (const state of states) {
-                        removeObject(state, event ? event.shiftKey : false);
-                    }
+                    removeObjects(states, event ? event.shiftKey : false);
                 }
             },
             CHANGE_OBJECT_COLOR: (event: KeyboardEvent | undefined) => {
@@ -490,6 +494,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}
                     statesCollapsedAll={statesCollapsedAll}
+                    collapsedStates={collapsedStates}
                     collapsedLabelStates={collapsedLabelStates}
                     readonly={readonly || false}
                     statesOrdering={statesOrdering}

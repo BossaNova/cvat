@@ -14,7 +14,7 @@ import {
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
     activateObjects as activateObjectsAction,
-    removeObject as removeObjectAction,
+    removeObjects as removeObjectsAction,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
@@ -22,20 +22,19 @@ import {
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
-import { Label } from 'cvat-core-wrapper';
+import { Label, ObjectState } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface OwnProps {
     readonly: boolean;
-    clientID: number;
-    objectStates: any[];
+    objectState: ObjectState;
     activateOnClick: boolean;
 }
 
 interface StateToProps {
-    objectState: any;
-    labels: any[];
+    objectState: ObjectState;
+    labels: Label[];
     attributes: any[];
     jobInstance: any;
     frameNumber: number;
@@ -55,7 +54,7 @@ interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
     activateObjects: (activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean) => void;
-    removeObject: (objectState: any, force: boolean) => void;
+    removeObjects: (objectStates: ObjectState[], force: boolean) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeGroupColor(group: number, color: string): void;
@@ -80,27 +79,17 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         shortcuts: { normalizedKeyMap },
     } = state;
 
-    const {
-        objectStates: states, clientID, activateOnClick,
-    } = own;
-    const stateIDs = states.map((_state: any): number => _state.clientID);
-    const index = stateIDs.indexOf(clientID);
-
-    if (index < 0) {
-        console.log('hello world');
-    }
-
     return {
-        objectState: states[index],
-        attributes: jobAttributes[states[index].label.id],
+        objectState: own.objectState,
+        attributes: jobAttributes[own.objectState.label.id ?? 0],
         labels,
         ready,
         activeControl,
         colorBy,
         jobInstance,
         frameNumber,
-        activated: activatedStateIDs.includes(clientID),
-        activateOnClick,
+        activated: activatedStateIDs.includes(own.objectState.clientID ?? 0),
+        activateOnClick: own.activateOnClick,
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
@@ -119,8 +108,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         activateObjects(activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean): void {
             dispatch(activateObjectsAction(activatedStateIDs, activatedElementID, null, multiSelect));
         },
-        removeObject(objectState: any): void {
-            dispatch(removeObjectAction(objectState, false));
+        removeObjects(objectStates: ObjectState[]): void {
+            dispatch(removeObjectsAction(objectStates, false));
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
@@ -153,11 +142,11 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private remove = (): void => {
         const {
-            objectState, readonly, removeObject,
+            objectState, readonly, removeObjects,
         } = this.props;
 
         if (!readonly) {
-            removeObject(objectState, false);
+            removeObjects([objectState], false);
         }
     };
 
@@ -272,7 +261,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
         const { objectState, readonly } = this.props;
 
-        if (!readonly) {
+        if (!readonly && objectState.points) {
             const { points } = objectState;
             const minD = {
                 x: (points[6] - points[2]) * 0.001,

@@ -239,7 +239,7 @@ resource "google_sql_database_instance" "cvat_postgresql_db" {
   depends_on = [google_service_networking_connection.cvat_private_vpc_connection]
 
   project             = module.cvat_project.project_id
-  deletion_protection = false
+  deletion_protection = true
   settings {
     tier = "db-f1-micro"
     ip_configuration {
@@ -274,6 +274,12 @@ resource "google_sql_database_instance" "cvat_postgresql_db" {
 resource "google_project_iam_member" "cvat_sa_iam_binding" {
   project = module.cvat_project.project_id
   role    = "roles/cloudsql.instanceUser"
+  member  = "serviceAccount:${module.cvat_service_accounts.email}"
+}
+
+resource "google_project_iam_member" "cvat_sa_iam_binding_redis" {
+  project = module.cvat_project.project_id
+  role    = "roles/redis.viewer"
   member  = "serviceAccount:${module.cvat_service_accounts.email}"
 }
 

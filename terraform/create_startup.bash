@@ -67,15 +67,14 @@ fi
 if [ -z "${secret_id}" ]; then
     secret_id="${arecord/./-}-postgres-password"
 fi
-
+commands+=("export CVAT_DB_INSTANCE_NAME=\$(gcloud sql instances list --format json | jq '.[].name' | xargs)")
 commands+=("export CVAT_HOST=${arecord}.${dns_name}")
 commands+=("export ACME_EMAIL=infosec@bossanova.com")
 commands+=("export CVAT_POSTGRES_DBNAME=cvat")
 commands+=("export CVAT_POSTGRES_USER=cvat_master")
-phost=$(echo "${terraform_outputs}" | jq -r 'keys[] as $k | "\($k), \(.[$k] | .value)"' | grep postgres_private_ip | cut -d "," -f 2 | xargs)
-commands+=("export CVAT_POSTGRES_HOST=${phost}")
-rhost=$(echo "${terraform_outputs}" | jq -r 'keys[] as $k | "\($k), \(.[$k] | .value)"' | grep redis_instance_host | cut -d "," -f 2 | xargs)
-commands+=("export CVAT_REDIS_HOST=${rhost}")
+commands+=("export CVAT_PROJECT=\$(curl --silent \"http://metadata.google.internal/computeMetadata/v1/project/project-id\" -H \"Metadata-Flavor: Google\")")
+commands+=("export CVAT_POSTGRES_HOST=\$(gcloud sql instances describe \${CVAT_DB_INSTANCE_NAME} --format json --project \"\${CVAT_PROJECT}\" | jq '.ipAddresses[0].ipAddress' | xargs)")
+commands+=("export CVAT_REDIS_HOST=\$(gcloud redis instances list --region us-east1 --format json | jq '.[].host' | xargs)")
 commands+=("export CVAT_POSTGRES_PASSWORD=\$(gcloud secrets versions access "$secret_id_version" --secret="${secret_id}" --project cloud-run-example-317621)")
 
 compute_host=$(echo "${terraform_outputs}" | jq -r 'keys[] as $k | "\($k), \(.[$k] | .value)"' | grep compute_host_name | cut -d "," -f 2 | xargs)

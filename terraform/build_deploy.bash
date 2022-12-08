@@ -118,7 +118,9 @@ else
     workspace="${env_tag}"
 fi
 TF_VAR_environment="${env_tag}"
+TF_VAR_qualifier="${qualifier}"
 environments+=("TF_VAR_environment")
+environments+=("TF_VAR_qualifier")
 for env in "${environments[@]}"; do
      export ${env}
 done

@@ -254,8 +254,8 @@ resource "google_sql_database_instance" "cvat_postgresql_db" {
     }
     backup_configuration {
       enabled                        = true
-      location                       = null
-      start_time                     = "03:00"
+      location                       = "us"
+      start_time                     = "10:00"
       point_in_time_recovery_enabled = false
       backup_retention_settings {
         retained_backups = 7
@@ -267,6 +267,12 @@ resource "google_sql_database_instance" "cvat_postgresql_db" {
       day          = 6
       hour         = 23
       update_track = "stable"
+    }
+    insights_config {
+      query_insights_enabled  = true
+      query_string_length     = 1024
+      record_application_tags = false
+      record_client_address   = true
     }
   }
 }
